@@ -90,3 +90,61 @@ function init(){
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
+
+/* 頂部導覽列（參考高速數位訊號設計小教室）：「← 返回」回到剛才看的那一頁、目前位置、上一頁／下一頁。
+   各手冊原本頁尾的上一頁／下一頁照常保留；這裡只是把它們也放到上面。高速數位那本已有自己的，不重複加。 */
+(function(){
+'use strict';
+if(window.__tbTop)return;window.__tbTop=1;
+function start(){
+  if(document.getElementById('crumbbar'))return;            // 高速數位小教室已有自己的
+  var main=document.querySelector('main');if(!main)return;
+  var books={
+    pg:function(){var p=document.querySelector('section.pg.on');return p&&{el:p,key:p.id,t:p.dataset.t,g:p.dataset.g};},
+    chap:function(){var p=document.querySelector('section.chap.active')||[].filter.call(document.querySelectorAll('section.chap'),function(s){return s.offsetParent!==null;})[0];
+      if(!p)return null;var h=p.querySelector('h2'),e=p.querySelector('.eyebrow');return{el:p,key:p.id,t:h?[].map.call(h.childNodes,function(n){return n.textContent.trim();}).filter(Boolean).join(' ').replace(/\s+/g,' '):p.id,g:e?e.textContent.split('·')[0].trim():''};},
+    page:function(){var p=document.querySelector('.page.on');return p&&{el:p,key:p.dataset.id,t:p.dataset.t,g:p.dataset.g,emi:1};}
+  };
+  var kind=document.querySelector('section.pg')?'pg':document.querySelector('section.chap')?'chap':document.querySelector('.page[data-id]')?'page':'';
+  if(!kind)return;
+  var st=document.createElement('style');st.textContent=
+   '.tb-top{position:sticky;z-index:9;display:flex;align-items:center;gap:8px;margin:0 0 14px;padding:7px 10px;border:1px solid var(--line,#dfe1e5);border-radius:10px;background:var(--panel,#fff);color:var(--ink,#1d1f23);box-shadow:0 6px 16px -12px rgba(0,0,0,.35);font:13px/1.4 system-ui,"Microsoft JhengHei",sans-serif}'+
+   '.tb-top button{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line,#dfe1e5);background:var(--bg,#f6f6f3);color:inherit;border-radius:8px;padding:5px 10px;font:inherit;cursor:pointer;white-space:nowrap;max-width:30vw;overflow:hidden;text-overflow:ellipsis}'+
+   '.tb-top button:hover:not(:disabled){border-color:var(--accent,#0b64c0);color:var(--accent,#0b64c0)}.tb-top button:disabled{opacity:.35;cursor:default}'+
+   '.tb-top .tb-bc{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted,#5d636e)}.tb-top .tb-bc b{color:var(--ink,#1d1f23)}'+
+   '.tb-top .tb-key{font-size:11px;color:var(--muted,#5d636e);white-space:nowrap}'+
+   '@media (max-width:700px){.tb-top{gap:6px;padding:6px 8px}.tb-top .tb-key,.tb-top .tb-g{display:none}.tb-top button{padding:5px 8px;max-width:34vw}.tb-top .tb-pn b{display:none}}';
+  document.head.appendChild(st);
+  var bar=document.createElement('div');bar.className='tb-top';bar.setAttribute('role','navigation');bar.setAttribute('aria-label','頁面導覽');
+  bar.innerHTML='<button type="button" class="tb-back" hidden>← 返回</button><div class="tb-bc"></div>'+
+    '<button type="button" class="tb-pn tb-prev">‹ <b>上一頁</b></button><button type="button" class="tb-pn tb-next"><b>下一頁</b> ›</button><span class="tb-key">Esc 返回</span>';
+  main.insertBefore(bar,main.firstChild);
+  var hd=document.querySelector('header.top')||document.querySelector('body>header');
+  function place(){var h=0;if(hd&&getComputedStyle(hd).position==='sticky')h=hd.getBoundingClientRect().height;bar.style.top='calc('+Math.round(h+6)+'px + env(safe-area-inset-top,0px))';}
+  place();addEventListener('resize',place);
+  var back=bar.querySelector('.tb-back'),prev=bar.querySelector('.tb-prev'),next=bar.querySelector('.tb-next'),bc=bar.querySelector('.tb-bc');
+  var stack=[],cur=null,going=false;
+  function pagerOf(p){if(kind==='page')return document.querySelector('.pager');var g=p.el.querySelector('.pager');return g||[].filter.call(document.querySelectorAll('.pager'),function(x){return x.offsetParent!==null;})[0];}
+  function pick(pg,which){if(!pg)return null;var e=which<0?(pg.querySelector('#prev,a.prev')||pg.querySelector('a:not(.nx)')):(pg.querySelector('#next,a.next,a.nx'));
+    if(!e||e.disabled||e.classList.contains('dis')||(e.tagName==='A'&&!e.getAttribute('href').replace('#','')))return null;return e;}
+  function label(e){return e?e.textContent.replace(/[←→◀▶‹›]/g,'').replace(/上一頁|下一頁|上一章|下一章/g,'').trim():'';}
+  function nav(key){going=true;
+    if(kind==='page'){var bs=document.querySelectorAll('aside button.nv'),hit=null;var pg=[].filter.call(document.querySelectorAll('.page'),function(x){return x.dataset.id===key;})[0];
+      [].forEach.call(bs,function(b){if(pg&&b.textContent.indexOf(pg.dataset.t)===0)hit=b;});if(hit)hit.click();else going=false;}
+    else{location.hash='#'+key;}
+    setTimeout(sync,60);}
+  function sync(){var p=books[kind]();if(!p)return;
+    if(!cur||cur.key!==p.key){if(cur&&!going)stack.push({key:cur.key,t:cur.t});if(stack.length>40)stack.shift();going=false;cur=p;}
+    bc.innerHTML=(p.g?'<span class="tb-g">'+p.g+' / </span>':'')+'<b></b>';bc.querySelector('b').textContent=p.t||'';
+    var pg=pagerOf(p),a=pick(pg,-1),b=pick(pg,1);
+    prev.disabled=!a;next.disabled=!b;prev.title=a?'上一頁：'+label(a):'';next.title=b?'下一頁：'+label(b):'';
+    prev.onclick=function(){if(a)a.click();setTimeout(sync,60);};next.onclick=function(){if(b)b.click();setTimeout(sync,60);};
+    var last=stack[stack.length-1];back.hidden=!last;if(last){back.textContent='← 返回：'+last.t;back.title='回到剛才看的「'+last.t+'」';}}
+  back.addEventListener('click',function(){var e=stack.pop();if(e)nav(e.key);});
+  addEventListener('keydown',function(e){if(e.key!=='Escape'||(e.target.closest&&e.target.closest('input,textarea,select')))return;var t=document.querySelector('.toc.open,nav.toc.open');if(t)return;if(stack.length){e.preventDefault();back.click();}});
+  addEventListener('hashchange',function(){setTimeout(sync,30);});addEventListener('popstate',function(){setTimeout(sync,30);});
+  document.addEventListener('click',function(){setTimeout(sync,80);},true);
+  setInterval(sync,700);sync();
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
+})();
