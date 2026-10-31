@@ -113,6 +113,7 @@ function start(){
    '.tb-top button:hover:not(:disabled){border-color:var(--accent,#0b64c0);color:var(--accent,#0b64c0)}.tb-top button:disabled{opacity:.35;cursor:default}'+
    '.tb-top .tb-bc{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted,#5d636e)}.tb-top .tb-bc b{color:var(--ink,#1d1f23)}'+
    '.tb-top .tb-key{font-size:11px;color:var(--muted,#5d636e);white-space:nowrap}'+
+   '@media (max-width:600px){body.wide .tb-top{padding-right:58px}}'+
    '@media (max-width:700px){.tb-top{gap:6px;padding:6px 8px}.tb-top .tb-key,.tb-top .tb-g{display:none}.tb-top button{padding:5px 8px;max-width:34vw}.tb-top .tb-pn b{display:none}}';
   document.head.appendChild(st);
   var bar=document.createElement('div');bar.className='tb-top';bar.setAttribute('role','navigation');bar.setAttribute('aria-label','頁面導覽');
@@ -141,7 +142,7 @@ function start(){
     prev.onclick=function(){if(a)a.click();setTimeout(sync,60);};next.onclick=function(){if(b)b.click();setTimeout(sync,60);};
     var last=stack[stack.length-1];back.hidden=!last;if(last){back.textContent='← 返回：'+last.t;back.title='回到剛才看的「'+last.t+'」';}}
   back.addEventListener('click',function(){var e=stack.pop();if(e)nav(e.key);});
-  addEventListener('keydown',function(e){if(e.key!=='Escape'||(e.target.closest&&e.target.closest('input,textarea,select')))return;var t=document.querySelector('.toc.open,nav.toc.open');if(t)return;if(stack.length){e.preventDefault();back.click();}});
+  addEventListener('keydown',function(e){if(e.key!=='Escape'||(e.target.closest&&e.target.closest('input,textarea,select')))return;var t=document.querySelector('.toc.open,nav.toc.open,.fs-root');if(t)return;if(stack.length){e.preventDefault();back.click();}});
   addEventListener('hashchange',function(){setTimeout(sync,30);});addEventListener('popstate',function(){setTimeout(sync,30);});
   document.addEventListener('click',function(){setTimeout(sync,80);},true);
   setInterval(sync,700);sync();
