@@ -119,9 +119,10 @@ function start(){
   var bar=document.createElement('div');bar.className='tb-top';bar.setAttribute('role','navigation');bar.setAttribute('aria-label','頁面導覽');
   bar.innerHTML='<button type="button" class="tb-back" hidden>← 返回</button><div class="tb-bc"></div>'+
     '<button type="button" class="tb-pn tb-prev">‹ <b>上一頁</b></button><button type="button" class="tb-pn tb-next"><b>下一頁</b> ›</button><span class="tb-key">Esc 返回</span>';
-  main.insertBefore(bar,main.firstChild);
+  var mtop=main.querySelector(':scope>.mtop');                 // EMI 手冊手機版的「☰ 目錄」列
+  main.insertBefore(bar,mtop?mtop.nextSibling:main.firstChild);
   var hd=document.querySelector('header.top')||document.querySelector('body>header');
-  function place(){var h=0;if(hd&&getComputedStyle(hd).position==='sticky')h=hd.getBoundingClientRect().height;bar.style.top='calc('+Math.round(h+6)+'px + env(safe-area-inset-top,0px))';}
+  function place(){var h=0;[hd,mtop].forEach(function(x){if(x&&x.offsetParent!==null&&getComputedStyle(x).position==='sticky')h+=x.getBoundingClientRect().height;});bar.style.top='calc('+Math.round(h+6)+'px + env(safe-area-inset-top,0px))';}
   place();addEventListener('resize',place);
   var back=bar.querySelector('.tb-back'),prev=bar.querySelector('.tb-prev'),next=bar.querySelector('.tb-next'),bc=bar.querySelector('.tb-bc');
   var stack=[],cur=null,going=false;
